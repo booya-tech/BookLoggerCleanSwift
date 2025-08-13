@@ -36,7 +36,7 @@ protocol AddBookRoutingLogic {
 
 // Data Passing Protocol
 protocol AddBookDataPassing {
-    var dataStore: AddBookDataStore? { get}
+    var dataStore: AddBookDataStore? { get }
 }
 
 // Data Store Protocol

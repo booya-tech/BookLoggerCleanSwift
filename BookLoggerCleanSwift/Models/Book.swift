@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Book {
+struct Book: Codable {
     let id: String
     let title: String
     let author: String
@@ -15,7 +15,7 @@ struct Book {
     let dataAdded: Date
 }
 
-enum BookStatus: String, CaseIterable {
+enum BookStatus: String, CaseIterable, Codable {
     case wantToRead = "Want to Read"
     case currentlyReading = "Currently Reading"
     case finishedReading = "Finished Reading"

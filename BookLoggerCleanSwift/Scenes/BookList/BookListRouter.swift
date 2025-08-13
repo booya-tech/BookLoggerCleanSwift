@@ -14,11 +14,7 @@ class BookListRouter: NSObject, BookListRoutingLogic, BookListDataPassing {
 
     // Routing Logic
     func routeToAddBook() {
-        // will AddBookViewController later
-        let alert = UIAlertController(title: "Add Book", message: "This will navigate to Add Book screen", preferredStyle: .alert)
-
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-
-        viewController?.present(alert, animated: true)
+        let destinationVC = AddBookViewController()
+        viewController?.navigationController?.pushViewController(destinationVC, animated: true)
     }
 }

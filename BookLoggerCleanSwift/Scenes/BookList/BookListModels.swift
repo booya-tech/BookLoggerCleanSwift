@@ -10,7 +10,7 @@ import Foundation
 enum BookList {
     enum LoadBooks {
         struct Request {
-            // Empty for now - could add filtering later
+            let statusFilter: BookStatus?
         }
 
         struct Response {
@@ -22,10 +22,27 @@ enum BookList {
         }
 
         struct DisplayedBook {
+            let id: String
             let title: String
             let author: String
             let statusText: String
             let statusEmoji: String
+        }
+    }
+
+    enum UpdateStatus {
+        struct Request {
+            let bookId: String
+            let newStatus: BookStatus
+        }
+
+        struct Response {
+            let updated: Bool
+            let books: [Book]
+        }
+
+        struct ViewModel {
+            let displayedBooks: [LoadBooks.DisplayedBook]
         }
     }
 }

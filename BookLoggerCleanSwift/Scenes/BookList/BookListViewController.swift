@@ -8,20 +8,41 @@
 import UIKit
 
 class BookListViewController: UIViewController {
-    // MARK: - Outlets
-    private let tableView = UITableView()
+    private let filterControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["All", "Want to Read", "Currently Reading", "Finished Reading"])
+        control.selectedSegmentIndex = 0
+
+        return control
+    }()
+
+    private var currentFilter: BookStatus? {
+        switch filterControl.selectedSegmentIndex {
+            case 1: return .wantToRead
+            case 2: return .currentlyReading
+            case 3: return .finishedReading
+            default: return nil
+        }
+    }
 
     // MARK: - VIP Components
     var interactor: BookListBusinessLogic? // business logic
     var router: (NSObjectProtocol & BookListRoutingLogic & BookListDataPassing)? // navigation
 
+    // Properties
+    private let tableView = UITableView()
     private var displayedBooks: [BookList.LoadBooks.DisplayedBook] = []
 
+    // Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
         setup()
         setupUI()
+        loadBooks()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         loadBooks()
     }
 
@@ -65,11 +86,35 @@ class BookListViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        filterControl.addTarget(self, action: #selector(filterChanged), for:.valueChanged)
+        let normalFont = UIFont.preferredFont(forTextStyle: .subheadline)
+        let selectedFont = UIFont.preferredFont(forTextStyle: .subheadline).withWeight(.semibold)
+
+        filterControl.setTitleTextAttributes([.font: normalFont], for: .normal)
+        filterControl.setTitleTextAttributes([.font: selectedFont], for: .selected)
+
+        let header = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 44 + 16))
+        header.addSubview(filterControl)
+        filterControl.translatesAutoresizingMaskIntoConstraints = false
+
+        let filterControlConstraints = [
+            filterControl.topAnchor.constraint(equalTo: header.topAnchor, constant: CGFloat(8)),
+            filterControl.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: CGFloat(16)),
+            filterControl.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: CGFloat(-16)),
+            filterControl.bottomAnchor.constraint(equalTo: header.bottomAnchor, constant: CGFloat(-8))
+        ]
+
+        NSLayoutConstraint.activate(filterControlConstraints)
+        tableView.tableHeaderView = header
     }
 
     private func loadBooks() {
-        let request = BookList.LoadBooks.Request()
-        interactor?.loadBooks(request: request)
+        interactor?.loadBooks(request: .init(statusFilter: currentFilter))
+    }
+
+    @objc func filterChanged() {
+        loadBooks()
     }
 
     @objc func addBookTapped() {
@@ -80,6 +125,12 @@ class BookListViewController: UIViewController {
 extension BookListViewController: BookListDisplayLogic {
     func displayBooks(viewModel: BookList.LoadBooks.ViewModel) {
         self.displayedBooks = viewModel.displayBooks
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+    func displayUpdatedBooks(viewModel: BookList.UpdateStatus.ViewModel) {
+        self.displayedBooks = viewModel.displayedBooks
         DispatchQueue.main.async {
             self.tableView.reloadData()
         }
@@ -98,6 +149,28 @@ extension BookListViewController: UITableViewDataSource {
         cell.configure(with: book)
 
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let model = displayedBooks[indexPath.row]
+
+        let want = UIContextualAction(style: .normal, title: "Want") { [weak self] _, _, done in
+            self?.interactor?.updateStatus(request: .init(bookId: model.id, newStatus: .wantToRead)); done(true)
+        }
+
+        let reading = UIContextualAction(style: .normal, title: "Reading") { [weak self] _, _, done in
+            self?.interactor?.updateStatus(request: .init(bookId: model.id, newStatus: .currentlyReading)); done(true)
+        }
+
+        let finished = UIContextualAction(style: .normal, title: "Finished") { [weak self] _, _, done in
+            self?.interactor?.updateStatus(request: .init(bookId: model.id, newStatus: .finishedReading)); done(true)
+        }
+
+        want.backgroundColor = .systemOrange
+        reading.backgroundColor = .systemBlue
+        finished.backgroundColor = .systemGreen
+
+        return UISwipeActionsConfiguration(actions: [finished, reading, want])
     }
 }
 
