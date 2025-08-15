@@ -14,7 +14,11 @@ class BookListInteractor: BookListBusinessLogic, BookListDataStore {
     // Use storage; auto-save on mutation
     private let store: BookStoring
 
-    var books: [Book] = []
+    var books: [Book] = [] {
+        didSet {
+            store.save(books)
+        }
+    }
 
     init(store: BookStoring = UserDefaultsBookStore()) {
         self.store = store
